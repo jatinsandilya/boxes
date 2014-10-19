@@ -5,13 +5,14 @@
 </head>
 <style type="text/css">
 #screen {
-	background-color: gray;
 	position: absolute;
 }	
 </style>
 <body>
 	<canvas id= 'screen' width='480' height ='320'></canvas>
 </body>
+
+
 <script type="text/javascript">
 	
 (function(){
@@ -20,13 +21,14 @@
 
 
   raf = window.requestAnimationFrame;
+  var GAME = GAME || {};//sed for namespacing
 
-  var canvas = document.getElementById('screen');
+var canvas = document.getElementById('screen');
 	canvas.addEventListener("mousedown",function(event){player.updateXY(event.clientX,event.clientY);});
-  var ctx = canvas.getContext("2d");
-	var WIDTH = canvas.width;
-	var HEIGHT = canvas.height;
-	var player = {
+  CTX = canvas.getContext("2d");
+	WIDTH = canvas.width;
+	HEIGHT = canvas.height;
+var player = {
 		x: WIDTH/2,
 		y:HEIGHT/2,
 		RADIUS:30,
@@ -34,39 +36,53 @@
 		new_y:HEIGHT/2,
 		// speedX:1,
   //   speedY:1,
-    speed:5,
+    
+		speed:5,
 		
-		updateXY:function(x,y){
+    updateXY:function(x,y){
 			this.new_x = x;
 			this.new_y = y;
-      // this.speedX = Math.abs(this.x-this.new_x);
-      // this.speedY = Math.abs(this.y-this.new_y);
-			console.log(this.new_x,this.new_y);
-          
+      this.speedX = Math.abs(this.x-this.new_x)/40;
+      this.speedY = Math.abs(this.y-this.new_y)/40;
+			console.log(this.x,this.y);
+      
 		},
 		
-//Need to revamp this function !!!!!!!
+//Need to update this function with a tolerance for the update of coordinates to happen to avoid stutter!!
     
 
     updateCoordinates:function(){
         
-        if(this.new_x<this.x){
-        	this.x = this.x - this.speed;
+        if(this.new_x - this.x < this.speedX){
+        	this.x = this.x - this.speedX;
 
         }
-        else{
-        	this.x = this.x + this.speed;
+        else if(this.new_x - this.x > this.speedX){
+        	this.x = this.x + this.speedX;
         };
 
-        if(this.new_y<this.y){
-        	this.y= this.y - this.speed;
+        if(this.new_y - this.y < this.speedY){
+        	this.y= this.y - this.speedY;
         }
 
-        else{
-        	this.y= this.y+ this.speed;
-         }
-        console.log('player moved to ',this.new_x,this.new_y);
-		}
+        else if (this.new_y - this.y >this.speedY){
+        	this.y= this.y+ this.speedY;
+         };
+        // console.log('player moved to ',this.new_x,this.new_y);
+		},
+    
+  render:function(){
+
+    CTX.beginPath();
+    CTX.arc(this.x,this.y,this.RADIUS,0,2*Math.PI);
+    CTX.fillStyle = 'black';
+    CTX.fill();
+    CTX.closePath();
+    
+    // CTX.fillStyle = 'black';
+    // CTX.fillRect(this.x,this.y,30,30);
+
+    }
 
 	};
     
@@ -74,11 +90,10 @@
 
 
 
-  update = function(blocks){
+  GAME.update = function(blocks){
 
-    for (var i = 0; i < blocks.length; i++) {
-      
-      blocks[i].render();// Yet to be defined ! 
+    for (i in blocks) {
+      blocks[i].update();
     };
 
    	player.updateCoordinates();
@@ -90,56 +105,130 @@
 
 
 
-  render = function(){
+  GAME.render = function(blocks){
     
-    ctx.clearRect(0,0,WIDTH,HEIGHT);
-    ctx.beginPath();
-    ctx.arc(player.x,player.y,player.RADIUS,0,2*Math.PI);
-    ctx.fillStyle = 'green';
-    ctx.fill();
-    ctx.closePath();
-    };
+    CTX.clearRect(0,0,WIDTH,HEIGHT);
+    player.render();
   
-  init = function(){
+  for (i in blocks) {
+  blocks[i].render();
+  
+  };
+    
+  };
+  
+  GAME.Init = function(noOfBlocks){
    
    listOfBlocks = [];
 
 
    var block = {
-    initX:,
-    inity:,
-    currX:,
-    currY:,
-    speed:,
-    dir:,
-    };
-  
-   var redBlock = Object.create(block);
-       redBlock.colour = "Red" ;
-       redBlock.render = function(){
-
-       };
-
-   var blackBlock = Object.create(block);
-       blackBlock.colour = "Black"; 
-       blackBlock.render = function(){
-
-       };
- 
-  }
-
-
-
-  gameloop = function(){
     
-    init();
-    update(listOfBlocks);
+    initX:0,
+    initY:0,
+    currX:0,
+    currY:0,
+    RADIUS:15,
+ speed:0,
+    
+    init :function(){
 
-    render();
-    raf(gameloop);
+  
+          this.dir= this.dir||Math.random()*2*Math.PI;
+          this.speed=  (this.speed)||(Math.random()*10);//Need to define a clamp function to restrict the speed .
+          this.initX = Math.floor(Math.random()*480);
+          this.initY = Math.floor(Math.random()*320);
+          this.currX = this.initX;
+          this.currY = this.initY;
+       },
+    update:function(){ 
+     if(this.currY > HEIGHT+10 || this.currX > WIDTH+10)
+    { 
+     this.init();
+    }
+    else
+    {
+    this.currX = this.currX + this.speed * Math.cos(this.dir);
+     this.currY = this.currY - this.speed * Math.sin(this.dir);
+    }
+  }
+};
+  
+   var redBlockFactory = function(){ 
+
+      var obj = Object.create(block);
+       
+      obj.colour = "Red" ;
+
+      obj.render = function(){
+        
+        CTX.beginPath();
+        CTX.arc(this.currX,this.currY,this.RADIUS,0,2*Math.PI);
+        CTX.fillStyle = "red";
+        CTX.fill();
+        CTX.closePath();
+      };
+
+      obj.init();
+
+      return obj;   
+   };       
+  
+   var blackBlockFactory = function(){
+ 
+ var obj = Object.create(block);
+      
+     obj.colour = "Black"; 
+       
+     obj.render = function(){
+        
+        CTX.beginPath();
+        CTX.arc(this.currX,this.currY,this.RADIUS,0,2*Math.PI);
+        CTX.fillStyle = 'black';
+        CTX.fill();
+        CTX.closePath();
+     };
+     
+     obj.init();
+     
+     return obj;
 
   };
- raf(gameloop);
+ 
+
+  for (var i = 0; i < noOfBlocks; i++) {
+  if(i < noOfBlocks/2)
+    listOfBlocks.push(redBlockFactory());
+  else
+    listOfBlocks.push(blackBlockFactory());
+  };
+
+  console.log(listOfBlocks);
+
+  };
+ 
+
+
+
+  GameLoop = function(){
+    
+    
+    GAME.update(listOfBlocks);
+
+    GAME.render(listOfBlocks);
+
+    raf(GameLoop);
+
+  };
+ 
+
+//Initializes random no.of blocks with random speeds and directions and any other initial requirements
+ noOfBlocks = Math.floor(Math.random()*15);
+ GAME.Init(noOfBlocks);
+
+
+//Starts the game  
+ raf(GameLoop);
 
 })();
 </script>
