@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-8">
+<head><title>Boxes</title>
+</head>
+<style type="text/css">
+#screen {
+	background-color: gray;
+	position: absolute;
+}	
+</style>
+<body>
+	<canvas id= 'screen' width='480' height ='320'></canvas>
+</body>
+<script type="text/javascript">
+	
+(function(){
+
+    
+
+
+  raf = window.requestAnimationFrame;
+
+  var canvas = document.getElementById('screen');
+	canvas.addEventListener("mousedown",function(event){player.updateXY(event.clientX,event.clientY);});
+  var ctx = canvas.getContext("2d");
+	var WIDTH = canvas.width;
+	var HEIGHT = canvas.height;
+	var player = {
+		x: WIDTH/2,
+		y:HEIGHT/2,
+		RADIUS:30,
+		new_x:WIDTH/2,
+		new_y:HEIGHT/2,
+		// speedX:1,
+  //   speedY:1,
+    speed:5,
+		
+		updateXY:function(x,y){
+			this.new_x = x;
+			this.new_y = y;
+      // this.speedX = Math.abs(this.x-this.new_x);
+      // this.speedY = Math.abs(this.y-this.new_y);
+			console.log(this.new_x,this.new_y);
+          
+		},
+		
+//Need to revamp this function !!!!!!!
+    
+
+    updateCoordinates:function(){
+        
+        if(this.new_x<this.x){
+        	this.x = this.x - this.speed;
+
+        }
+        else{
+        	this.x = this.x + this.speed;
+        };
+
+        if(this.new_y<this.y){
+        	this.y= this.y - this.speed;
+        }
+
+        else{
+        	this.y= this.y+ this.speed;
+         }
+        console.log('player moved to ',this.new_x,this.new_y);
+		}
+
+	};
+    
+  
+
+
+
+  update = function(blocks){
+
+    for (var i = 0; i < blocks.length; i++) {
+      
+      blocks[i].render();// Yet to be defined ! 
+    };
+
+   	player.updateCoordinates();
+   
+   };
+
+    
+
+
+
+
+  render = function(){
+    
+    ctx.clearRect(0,0,WIDTH,HEIGHT);
+    ctx.beginPath();
+    ctx.arc(player.x,player.y,player.RADIUS,0,2*Math.PI);
+    ctx.fillStyle = 'green';
+    ctx.fill();
+    ctx.closePath();
+    };
+  
+  init = function(){
+   
+   listOfBlocks = [];
+
+
+   var block = {
+    initX:,
+    inity:,
+    currX:,
+    currY:,
+    speed:,
+    dir:,
+    };
+  
+   var redBlock = Object.create(block);
+       redBlock.colour = "Red" ;
+       redBlock.render = function(){
+
+       };
+
+   var blackBlock = Object.create(block);
+       blackBlock.colour = "Black"; 
+       blackBlock.render = function(){
+
+       };
+ 
+  }
+
+
+
+  gameloop = function(){
+    
+    init();
+    update(listOfBlocks);
+
+    render();
+    raf(gameloop);
+
+  };
+ raf(gameloop);
+
+})();
+</script>
+	
+</html>
