@@ -20,31 +20,41 @@
     
 
 
-  raf = window.requestAnimationFrame;
-  var GAME = GAME || {};//sed for namespacing
+raf = window.requestAnimationFrame;
+
+var GAME = GAME || {};//sed for namespacing
 
 var canvas = document.getElementById('screen');
-	canvas.addEventListener("mousedown",function(event){player.updateXY(event.clientX,event.clientY);});
-  CTX = canvas.getContext("2d");
-	WIDTH = canvas.width;
-	HEIGHT = canvas.height;
+  
+SCORE = 0;
+canvas.addEventListener("mousedown",function(event){player.updateXY(event.clientX,event.clientY);});
+CTX = canvas.getContext("2d");
+WIDTH = canvas.width;
+HEIGHT = canvas.height;
+
+
+
 var player = {
-		x: WIDTH/2,
-		y:HEIGHT/2,
-		RADIUS:30,
-		new_x:WIDTH/2,
-		new_y:HEIGHT/2,
-		// speedX:1,
-  //   speedY:1,
-    
-		speed:5,
+		
+    currX:WIDTH/2,
+		
+    currY:HEIGHT/2,
+		
+    RADIUS:30,
+		
+    new_x:WIDTH/2,
+		
+    new_y:HEIGHT/2,
+		
+    speed:5,
 		
     updateXY:function(x,y){
-			this.new_x = x;
+			
+      this.new_x = x;
 			this.new_y = y;
-      this.speedX = Math.abs(this.x-this.new_x)/40;
-      this.speedY = Math.abs(this.y-this.new_y)/40;
-			console.log(this.x,this.y);
+      this.speedX = Math.floor(Math.abs(this.currX-this.new_x)/40);
+      this.speedY = Math.floor(Math.abs(this.currY-this.new_y)/40);
+			// console.log(this.currX,this.currY);
       
 		},
 		
@@ -53,20 +63,20 @@ var player = {
 
     updateCoordinates:function(){
         
-        if(this.new_x - this.x < this.speedX){
-        	this.x = this.x - this.speedX;
+        if(this.new_x - this.currX < this.speedX){
+        	this.currX = this.currX - this.speedX;
 
         }
-        else if(this.new_x - this.x > this.speedX){
-        	this.x = this.x + this.speedX;
+        else if(this.new_x - this.currX > this.speedX){
+        	this.currX = this.currX + this.speedX;
         };
 
-        if(this.new_y - this.y < this.speedY){
-        	this.y= this.y - this.speedY;
+        if(this.new_y - this.currY < this.speedY){
+        	this.currY= this.currY - this.speedY;
         }
 
-        else if (this.new_y - this.y >this.speedY){
-        	this.y= this.y+ this.speedY;
+        else if (this.new_y - this.currY >this.speedY){
+        	this.currY= this.currY+ this.speedY;
          };
         // console.log('player moved to ',this.new_x,this.new_y);
 		},
@@ -74,7 +84,7 @@ var player = {
   render:function(){
 
     CTX.beginPath();
-    CTX.arc(this.x,this.y,this.RADIUS,0,2*Math.PI);
+    CTX.arc(this.currX,this.currY,this.RADIUS,0,2*Math.PI);
     CTX.fillStyle = 'black';
     CTX.fill();
     CTX.closePath();
@@ -84,77 +94,117 @@ var player = {
 
     }
 
-	};
+};
     
   
 
 
 
-  GAME.update = function(blocks){
-
+GAME.update = function(blocks){
+    
+    player.updateCoordinates();
+    
     for (i in blocks) {
       blocks[i].update();
+      blocks[i].checkCollision(player);
+
     };
 
-   	player.updateCoordinates();
+   	
+    
    
-   };
+};
 
     
 
 
 
 
-  GAME.render = function(blocks){
+GAME.render = function(blocks){
     
     CTX.clearRect(0,0,WIDTH,HEIGHT);
     player.render();
   
-  for (i in blocks) {
-  blocks[i].render();
-  
-  };
+    for (i in blocks) {
+    blocks[i].render();
+    };
     
-  };
+    CTX.fillStyle = "black";
+    CTX.font = "16px helvetica" ;                  
+    CTX.fillText(SCORE,WIDTH-50,HEIGHT-20);
+};
   
-  GAME.Init = function(noOfBlocks){
+GAME.Init = function(noOfBlocks){
    
-   listOfBlocks = [];
+listOfBlocks = [];
 
 
-   var block = {
+var block = {
     
     initX:0,
     initY:0,
     currX:0,
     currY:0,
     RADIUS:15,
- speed:0,
+    speed:0,
     
-    init :function(){
+   init :function(){
 
   
           this.dir= this.dir||Math.random()*2*Math.PI;
           this.speed=  (this.speed)||(Math.random()*10);//Need to define a clamp function to restrict the speed .
           this.initX = Math.floor(Math.random()*480);
-          this.initY = Math.floor(Math.random()*320);
+          this.initY = Math.floor(Math.random()*320)-10;
           this.currX = this.initX;
           this.currY = this.initY;
        },
-    update:function(){ 
-     if(this.currY > HEIGHT+10 || this.currX > WIDTH+10)
-    { 
-     this.init();
-    }
-    else
-    {
-    this.currX = this.currX + this.speed * Math.cos(this.dir);
+   
+   update :function(){ 
+      
+      if(this.currY > HEIGHT+10 || this.currX > WIDTH+10)
+       { 
+      this.init();
+       }
+     else
+       {
+     this.currX = this.currX + this.speed * Math.cos(this.dir);
      this.currY = this.currY - this.speed * Math.sin(this.dir);
+       }
+      },
+  
+   checkCollision : function(arguments){
+    
+      for(var i = 0;i<arguments.length;i++){
+          
+          var x_diff = Math.abs(this.currX - arguments[i].currX) ;
+          var y_diff = Math.abs(this.currY - arguments[i].currY) ;
+
+         if( this.RADIUS + arguments[i].RADIUS >= x_diff  && this.RADIUS + arguments[i].RADIUS >= y_diff ) {
+
+              if(!!arguments[i].colour){
+                 // when the collision is with another block and not the player
+              }
+             else {
+
+                if( this.colour === "Red" )
+                  SCORE--;
+                else if( this.colour === "black")
+                  SCORE++;
+             }       
+            
+            listOfBlocks.splice( listOfBlocks.indexOf(this),1);
+            
+            // this.init();
+
+            console.log(listOfBlocks.length,(this.dir/Math.PI)*180);
+
+         }
+       }
+      }
     }
-  }
 };
   
-   var redBlockFactory = function(){ 
+var redBlockFactory = function(){ 
 
       var obj = Object.create(block);
        
@@ -172,9 +222,9 @@ var player = {
       obj.init();
 
       return obj;   
-   };       
+};       
   
-   var blackBlockFactory = function(){
+var blackBlockFactory = function(){
  
  var obj = Object.create(block);
       
@@ -193,10 +243,11 @@ var player = {
      
      return obj;
 
-  };
+};
  
 
-  for (var i = 0; i < noOfBlocks; i++) {
+for (var i = 0; i < noOfBlocks; i++) {
+  
   if(i < noOfBlocks/2)
     listOfBlocks.push(redBlockFactory());
   else
@@ -205,30 +256,32 @@ var player = {
 
   console.log(listOfBlocks);
 
-  };
+};
  
 
 
-
-  GameLoop = function(){
+GAME.Loop = function(){
     
     
     GAME.update(listOfBlocks);
 
     GAME.render(listOfBlocks);
 
-    raf(GameLoop);
+    raf(GAME.Loop);
 
-  };
+};
  
 
 //Initializes random no.of blocks with random speeds and directions and any other initial requirements
- noOfBlocks = Math.floor(Math.random()*15);
- GAME.Init(noOfBlocks);
+ 
+noOfBlocks = Math.floor(Math.random()*15);
+
+GAME.Init(noOfBlocks);
 
 
 //Starts the game  
- raf(GameLoop);
+
+raf(GAME.Loop);
 
 })();
 </script>
